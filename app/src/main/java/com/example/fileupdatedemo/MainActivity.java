@@ -34,15 +34,15 @@ public class MainActivity extends AppCompatActivity {
   private TextView tv;
   private FloatingActionButton fab;
   private RecyclerView recycleView;
-  private List<Myfile> zipfiles = new ArrayList<>();
+  private List<Myfile> zipfiles = null;
   private RecycleviewAdapter mAdapter;
 
   @SuppressLint("HandlerLeak")
-  private Handler mhandler = new Handler(){
+  private Handler mhandler = new Handler() {
     @Override
     public void handleMessage(Message msg) {
       super.handleMessage(msg);
-      if(msg!= null && msg.what ==1){
+      if (msg != null && msg.what == 1) {
         tv.setText((CharSequence) msg.obj);
       }
     }
@@ -54,15 +54,18 @@ public class MainActivity extends AppCompatActivity {
     getWindow().setFlags(LayoutParams.FLAG_FULLSCREEN, LayoutParams.FLAG_FULLSCREEN);
     setContentView(R.layout.activity_main);
     mContext = this;
-
-    initView();
+    if (zipfiles != null) {
+      initRecycleView();
+    }
+    tv = findViewById(R.id.notice_text);
+    fab = findViewById(R.id.fab);
     fab.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
         new Thread(new Runnable() {
           @Override
           public void run() {
-            zipfiles.clear();
+            zipfiles = new ArrayList<>();
             Uri fileUri = Files.getContentUri("/external");
             String[] projection = new String[]{FileColumns.TITLE, FileColumns.DATE_MODIFIED,
                 FileColumns.DATA};
@@ -98,9 +101,7 @@ public class MainActivity extends AppCompatActivity {
   }
 
 
-  private void initView() {
-    tv = findViewById(R.id.notice_text);
-    fab = findViewById(R.id.fab);
+  private void initRecycleView() {
     recycleView = findViewById(R.id.recycleView);
     recycleView.setLayoutManager(new LinearLayoutManager(mContext));
     mAdapter = new RecycleviewAdapter(mContext, zipfiles);
@@ -119,6 +120,10 @@ public class MainActivity extends AppCompatActivity {
 
     private Context context;
     private List<Myfile> myfileList;
+
+    public void notifyChange() {
+
+    }
 
     public RecycleviewAdapter(Context context, List<Myfile> mfilesList) {
       this.context = context;
@@ -166,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
       Log.d(TAG, "getItemCount: ===" + zipfiles.size());
       return zipfiles.size();
     }
+
 
     class RecycleViewHolder extends ViewHolder {
 
