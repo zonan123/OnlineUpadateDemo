@@ -5,9 +5,9 @@
   xmlns:tools="http://schemas.android.com/tools"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
+  android:orientation="vertical"
   app:layout_behavior="@string/appbar_scrolling_view_behavior"
   tools:context=".MainActivity"
-  android:orientation="vertical"
   tools:showIn="@layout/activity_main">
 
   <TextView
@@ -15,10 +15,10 @@
     android:layout_width="match_parent"
     android:layout_height="80dp"
     android:layout_gravity="top"
-    android:gravity="center"
-    android:text="@string/searching_zip"
     android:background="@color/colorPrimary"
-    android:elevation="4dp"/>
+    android:elevation="4dp"
+    android:gravity="center"
+    android:text="@string/searching_zip"/>
 
   <android.support.v7.widget.RecyclerView
     android:id="@+id/recycleView"
