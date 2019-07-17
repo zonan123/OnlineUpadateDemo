@@ -6,7 +6,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore.Files;
 import android.provider.MediaStore.Files.FileColumns;
@@ -34,78 +33,69 @@ public class MainActivity extends AppCompatActivity {
   private TextView tv;
   private FloatingActionButton fab;
   private RecyclerView recycleView;
-  private List<Myfile> zipfiles = null;
+  private List<Myfile> zipfiles = new ArrayList<>();
   private RecycleviewAdapter mAdapter;
 
-  @SuppressLint("HandlerLeak")
-  private Handler mhandler = new Handler() {
-    @Override
-    public void handleMessage(Message msg) {
-      super.handleMessage(msg);
-      if (msg != null && msg.what == 1) {
-        tv.setText((CharSequence) msg.obj);
-      }
-    }
-  };
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    Log.d(TAG, "onCreate: ");
     super.onCreate(savedInstanceState);
     getWindow().setFlags(LayoutParams.FLAG_FULLSCREEN, LayoutParams.FLAG_FULLSCREEN);
     setContentView(R.layout.activity_main);
     mContext = this;
-    if (zipfiles != null) {
-      initRecycleView();
-    }
+    initData();
+    initRecycleView();
+
     tv = findViewById(R.id.notice_text);
     fab = findViewById(R.id.fab);
-    fab.setOnClickListener(new View.OnClickListener() {
+    fab.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View view) {
-        new Thread(new Runnable() {
-          @Override
-          public void run() {
-            zipfiles = new ArrayList<>();
-            Uri fileUri = Files.getContentUri("/external");
-            String[] projection = new String[]{FileColumns.TITLE, FileColumns.DATE_MODIFIED,
-                FileColumns.DATA};
-            String selection = FileColumns.DATA + " LIKE '%.zip'";
-            String sortOrder = FileColumns.DATE_MODIFIED;
-            ContentResolver resolver = mContext.getContentResolver();
-            Cursor cursor = resolver.query(fileUri, projection, selection, null, sortOrder);
-
-            if (cursor != null) {
-              while (cursor.moveToNext()) {
-                Myfile myfile = new Myfile();
-                myfile.setFileTitle(cursor.getString(cursor.getColumnIndex(FileColumns.TITLE)));
-                myfile.setFileDate(
-                    cursor.getString(cursor.getColumnIndex(FileColumns.DATE_MODIFIED)));
-                myfile.setFileDetails(cursor.getString(cursor.getColumnIndex(FileColumns.DATA)));
-                zipfiles.add(myfile);
-
-                Log.d(TAG, "getSearchFiles: ===" + myfile.toString());
-                Message msg = mhandler.obtainMessage();
-                msg.what = 1;
-                msg.obj = myfile.toString();
-                mhandler.sendMessage(msg);
-
-              }
-              cursor.close();
-            }
-
-          }
-        }).start();
-
+        recycleView.setVisibility(View.VISIBLE);
       }
     });
   }
 
+  public void initData() {
+    Log.d(TAG, "initData: ");
+    Uri fileUri = Files.getContentUri("/external");
+    String[] projection = new String[]{FileColumns.TITLE, FileColumns.DATE_MODIFIED,
+        FileColumns.DATA};
+    String selection = FileColumns.DATA + " LIKE '%.zip'";
+    String sortOrder = FileColumns.DATE_MODIFIED;
+    ContentResolver resolver = mContext.getContentResolver();
+    Cursor cursor = resolver.query(fileUri, projection, selection, null, sortOrder);
+
+    if (cursor != null) {
+      Log.d(TAG, "initData: ===cursor");
+
+      while (cursor.moveToNext()) {
+        Myfile myfile = new Myfile();
+        myfile.setFileTitle(cursor.getString(cursor.getColumnIndex(FileColumns.TITLE)));
+        myfile.setFileDate(
+            cursor.getString(cursor.getColumnIndex(FileColumns.DATE_MODIFIED)));
+        myfile.setFileDetails(cursor.getString(cursor.getColumnIndex(FileColumns.DATA)));
+        zipfiles.add(myfile);
+
+        Log.d(TAG, "getSearchFiles: ===" + myfile.toString());
+        tv.setText(myfile.getFileDetails());
+
+      }
+      cursor.close();
+    }
+  }
 
   private void initRecycleView() {
+    Log.d(TAG, "initRecycleView: ");
+
     recycleView = findViewById(R.id.recycleView);
     recycleView.setLayoutManager(new LinearLayoutManager(mContext));
+    Log.d(TAG, "initRecycleView: ===layoutmanager" + recycleView.getLayoutManager());
     mAdapter = new RecycleviewAdapter(mContext, zipfiles);
     recycleView.setAdapter(mAdapter);
+    Log.d(TAG, "initRecycleView: adapter" + recycleView.getAdapter());
+
     recycleView.addItemDecoration(new RecycleViewDecorate(mContext, 1));
     mAdapter.setItemClickListener(new ItemClickListener() {
       @Override
@@ -115,8 +105,8 @@ public class MainActivity extends AppCompatActivity {
     });
   }
 
-
-  class RecycleviewAdapter extends RecyclerView.Adapter<RecycleviewAdapter.RecycleViewHolder> {
+  class RecycleviewAdapter extends
+      RecyclerView.Adapter<RecycleviewAdapter.RecycleViewHolder> {
 
     private Context context;
     private List<Myfile> myfileList;
