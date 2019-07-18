@@ -6,7 +6,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore.Files;
 import android.provider.MediaStore.Files.FileColumns;
@@ -23,111 +22,80 @@ import android.view.ViewGroup;
 import android.view.WindowManager.LayoutParams;
 import android.widget.TextView;
 import com.example.fileupdatedemo.utils.RecycleViewDecorate;
-import java.io.File;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-  public static final String TAG = "testLog";
+  public static final String TAG = "Mytest";
 
   private Context mContext;
   private TextView tv;
   private FloatingActionButton fab;
   private RecyclerView recycleView;
-  private List<Updatefile> zipfiles = new ArrayList<>();
-  private RecycleviewAdapter mAdapter = new RecycleviewAdapter();
+  private List<Myfile> zipfiles = new ArrayList<>();
+  private RecycleviewAdapter mAdapter;
 
-  @SuppressLint("HandlerLeak")
-  private Handler mhandler = new Handler() {
-    @Override
-    public void handleMessage(Message msg) {
-      super.handleMessage(msg);
-      if (msg != null) {
-        Log.d(TAG, "handleMessage: ===" + msg.what);
-        switch (msg.what) {
-          case 1:
-            tv.setText((CharSequence) msg.obj);
-            mAdapter.notifyDataSetChanged();
-            break;
-          case 0:
-            tv.setText("No file found");
-            break;
-        }
-      }
-    }
-  };
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    Log.d(TAG, "onCreate: ===");
+    Log.d(TAG, "onCreate: ");
     super.onCreate(savedInstanceState);
-
     getWindow().setFlags(LayoutParams.FLAG_FULLSCREEN, LayoutParams.FLAG_FULLSCREEN);
     setContentView(R.layout.activity_main);
     mContext = this;
-    initView();
+    initData();
+    initRecycleView();
+
     tv = findViewById(R.id.notice_text);
     fab = findViewById(R.id.fab);
-    fab.setOnClickListener(new View.OnClickListener() {
+    fab.setOnClickListener(new OnClickListener() {
       @Override
-      public void onClick(final View view) {
-        new Thread(new Runnable() {
-          @Override
-          public void run() {
-            Log.d(TAG, "run: ===" + this.toString());
-            initData();
-          }
-        }).start();
+      public void onClick(View view) {
+        recycleView.setVisibility(View.VISIBLE);
       }
     });
   }
 
-  private void initData() {
-    Log.d(TAG, "initData: ===");
-    zipfiles.clear();
+  public void initData() {
+    Log.d(TAG, "initData: ");
     Uri fileUri = Files.getContentUri("/external");
-    String[] projection = new String[]{FileColumns.TITLE, FileColumns.DATA};
-    String selection = FileColumns.DATA + " LIKE ?"; //FileColumns.DATA + " LIKE ? AND "+
-    String[] args = new String[]{"%.zip"};//"%.zip","%_update"
+    String[] projection = new String[]{FileColumns.TITLE, FileColumns.DATE_MODIFIED,
+        FileColumns.DATA};
+    String selection = FileColumns.DATA + " LIKE '%.zip'";
     String sortOrder = FileColumns.DATE_MODIFIED;
     ContentResolver resolver = mContext.getContentResolver();
-    Cursor cursor = resolver.query(fileUri, projection, selection, args, sortOrder);
+    Cursor cursor = resolver.query(fileUri, projection, selection, null, sortOrder);
+
     if (cursor != null) {
-      if (cursor.getCount() == 0) {
-        mhandler.sendEmptyMessage(0);
-        Log.d(TAG, "send message==0");
-      } else {
-        while (cursor.moveToNext()) {
-          Updatefile updatefile = new Updatefile();
-          updatefile.setFileTitle(cursor.getString(cursor.getColumnIndex(FileColumns.TITLE)));
-          updatefile.setFileDetails(cursor.getString(cursor.getColumnIndex(FileColumns.DATA)));
-          //需要判断路径文件是否存在
-          File file = new File(updatefile.getFileDetails());
-          if (file.exists()) {
-            Message message = mhandler.obtainMessage();
-            message.what = 1;
-            message.obj = updatefile.getFileDetails();
-            mhandler.sendMessage(message);
-            Log.d(TAG, "send message==1" + updatefile.toString());
-            zipfiles.add(updatefile);
-            Log.d(TAG, "zipfiles===size " + zipfiles.size());
-          }
-        }
-        cursor.close();
+      Log.d(TAG, "initData: ===cursor");
+
+      while (cursor.moveToNext()) {
+        Myfile myfile = new Myfile();
+        myfile.setFileTitle(cursor.getString(cursor.getColumnIndex(FileColumns.TITLE)));
+        myfile.setFileDate(
+            cursor.getString(cursor.getColumnIndex(FileColumns.DATE_MODIFIED)));
+        myfile.setFileDetails(cursor.getString(cursor.getColumnIndex(FileColumns.DATA)));
+        zipfiles.add(myfile);
+
+        Log.d(TAG, "getSearchFiles: ===" + myfile.toString());
+        tv.setText(myfile.getFileDetails());
+
       }
-    } else {
-      Log.d(TAG, "initData:cursor==null");
+      cursor.close();
     }
   }
 
-  private void initView() {
+  private void initRecycleView() {
+    Log.d(TAG, "initRecycleView: ");
 
-    Log.d(TAG, "initView: ===");
     recycleView = findViewById(R.id.recycleView);
     recycleView.setLayoutManager(new LinearLayoutManager(mContext));
+    Log.d(TAG, "initRecycleView: ===layoutmanager" + recycleView.getLayoutManager());
+    mAdapter = new RecycleviewAdapter(mContext, zipfiles);
     recycleView.setAdapter(mAdapter);
+    Log.d(TAG, "initRecycleView: adapter" + recycleView.getAdapter());
+
     recycleView.addItemDecoration(new RecycleViewDecorate(mContext, 1));
     mAdapter.setItemClickListener(new ItemClickListener() {
       @Override
@@ -137,7 +105,20 @@ public class MainActivity extends AppCompatActivity {
     });
   }
 
-  class RecycleviewAdapter extends RecyclerView.Adapter<RecycleviewAdapter.RecycleViewHolder> {
+  class RecycleviewAdapter extends
+      RecyclerView.Adapter<RecycleviewAdapter.RecycleViewHolder> {
+
+    private Context context;
+    private List<Myfile> myfileList;
+
+    public void notifyChange() {
+
+    }
+
+    public RecycleviewAdapter(Context context, List<Myfile> mfilesList) {
+      this.context = context;
+      this.myfileList = mfilesList;
+    }
 
     private ItemClickListener itemClickListener;
 
@@ -151,19 +132,19 @@ public class MainActivity extends AppCompatActivity {
       Log.d(TAG, "onCreateViewHolder: ===");
       RecycleViewHolder mholder = new RecycleViewHolder(LayoutInflater.from(mContext).
           inflate(R.layout.item_list, parent, false));
-      Log.d(TAG, "onCreateViewHolder: ===" + mholder);
+      Log.d(TAG, "onCreateViewHolder: ===" + (mholder != null));
       return mholder;
     }
 
     @Override
     public void onBindViewHolder(final RecycleViewHolder holder, final int position) {
-      Log.d(TAG, "onBindViewHolder: ===");
 
-      holder.filedata.setText(zipfiles.get(position).getFileDetails());
+      Log.d(TAG, "onBindViewHolder: ===" + holder);
+      holder.filedate.setText(zipfiles.get(position).getFileDate());
+      Log.d(TAG, "onBindViewHolder: ===" + zipfiles.get(position).getFileDate());
       holder.filetitle.setText(zipfiles.get(position).getFileTitle());
 
       if (itemClickListener != null) {
-        Log.d(TAG, "onBindViewHolder: ===itemClickListener===");
         holder.filetitle.setOnClickListener(new OnClickListener() {
           @Override
           public void onClick(View view) {
@@ -176,19 +157,20 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public int getItemCount() {
+
       Log.d(TAG, "getItemCount: ===" + zipfiles.size());
       return zipfiles.size();
     }
 
+
     class RecycleViewHolder extends ViewHolder {
 
-      TextView filedata;
+      TextView filedate;
       TextView filetitle;
 
       public RecycleViewHolder(View itemView) {
         super(itemView);
-        Log.d(TAG, "RecycleViewHolder: itemView" + itemView);
-        filedata = itemView.findViewById(R.id.file_data);
+        filedate = itemView.findViewById(R.id.file_date);
         filetitle = itemView.findViewById(R.id.file_title);
       }
     }
