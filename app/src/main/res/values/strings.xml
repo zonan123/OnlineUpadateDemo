@@ -1,5 +1,5 @@
 <resources>
   <string name="app_name">FileUpdateDemo</string>
   <string name="action_settings">Settings</string>
-  <string name="searching_zip">Searching for .zip</string>
+  <string name="searching_zip">Searching for zipfiles</string>
 </resources>
