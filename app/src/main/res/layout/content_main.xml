@@ -15,7 +15,8 @@
     android:layout_width="match_parent"
     android:layout_height="80dp"
     android:layout_gravity="top"
-    android:background="@color/colorPrimary"
+    android:background="@color/blue_deep"
+    android:textColor="@color/text_color"
     android:elevation="4dp"
     android:gravity="center"
     android:text="@string/searching_zip"/>

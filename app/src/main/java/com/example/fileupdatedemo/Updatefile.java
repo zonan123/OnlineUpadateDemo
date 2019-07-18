@@ -1,6 +1,11 @@
 package com.example.fileupdatedemo;
 
-public class Myfile {
+import android.util.Log;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+public class Updatefile {
 
   private String fileTitle;
   private String fileDate;
@@ -14,15 +19,17 @@ public class Myfile {
     this.fileDetails = fileDetails;
   }
 
-
-  public String getFileDate() {
-    return fileDate;
-  }
+/*
+  public String getFileDate() throws ParseException {
+    DateFormat df = DateFormat.getDateInstance();
+    String date = df.format(df.parse(fileDate));
+    Log.d("testLog", "getFileDate: ===getDate" + date);
+    return date;
+  }*/
 
   public void setFileDate(String fileDate) {
     this.fileDate = fileDate;
   }
-
 
   public String getFileTitle() {
     return fileTitle;
@@ -36,7 +43,6 @@ public class Myfile {
   public String toString() {
     return "Myfile{" +
         "fileTitle='" + fileTitle + '\'' +
-        ", fileDate='" + fileDate + '\'' +
         ", fileDetails='" + fileDetails + '\'' +
         '}';
   }
